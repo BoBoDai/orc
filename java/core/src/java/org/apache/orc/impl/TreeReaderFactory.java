@@ -365,18 +365,22 @@ public class TreeReaderFactory {
         // present stream
         previous.noNulls = true;
         boolean allNull = true;
-        for (int i = 0; i < batchSize; i++) {
-          if (isNull == null || !isNull[i]) {
-            if (present != null && present.next() != 1) {
+        if (NativeTreeReader.isLoaded()) {
+          allNull = NativeTreeReader.nextVector(previous, isNull, batchSize, present);
+        } else {
+          for (int i = 0; i < batchSize; i++) {
+            if (isNull == null || !isNull[i]) {
+              if (present != null && present.next() != 1) {
+                previous.noNulls = false;
+                previous.isNull[i] = true;
+              } else {
+                previous.isNull[i] = false;
+                allNull = false;
+              }
+            } else {
               previous.noNulls = false;
               previous.isNull[i] = true;
-            } else {
-              previous.isNull[i] = false;
-              allNull = false;
             }
-          } else {
-            previous.noNulls = false;
-            previous.isNull[i] = true;
           }
         }
         previous.isRepeating = !previous.noNulls && allNull;
