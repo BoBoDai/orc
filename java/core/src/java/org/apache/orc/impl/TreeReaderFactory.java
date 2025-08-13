@@ -46,6 +46,7 @@ import org.apache.orc.impl.reader.tree.PrimitiveBatchReader;
 import org.apache.orc.impl.reader.tree.StructBatchReader;
 import org.apache.orc.impl.reader.tree.TypeReader;
 import org.apache.orc.impl.writer.TimestampTreeWriter;
+import org.apache.orc.util.NativeResourceLoader;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.EOFException;
@@ -341,6 +342,16 @@ public class TreeReaderFactory {
       }
     }
 
+      static {
+          try {
+              if (!"java".equalsIgnoreCase(System.getProperty("orc.nextVector.impl"))) {
+                  NativeResourceLoader.load("nextVector3");
+              }
+          } catch (UnsatisfiedLinkError | ExceptionInInitializerError e) {
+              // ignore
+          }
+      }
+
     /**
      * Populates the isNull vector array in the previousVector object based on
      * the present stream values. This function is called from all the child
@@ -365,21 +376,61 @@ public class TreeReaderFactory {
         // present stream
         previous.noNulls = true;
         boolean allNull = true;
-        for (int i = 0; i < batchSize; i++) {
-          if (isNull == null || !isNull[i]) {
-            if (present != null && present.next() != 1) {
+        long start = System.nanoTime();
+        if (batchSize >= 1000 && NativeTreeReader.isLoaded()) {
+          long step1start = System.nanoTime();
+          byte[] presentBuffer = null;
+          if (present != null) {
+            presentBuffer = new byte[batchSize];
+            if (isNull == null) {
+              for (int i = 0; i < batchSize; i++) {
+                presentBuffer[i] = (byte) (present.next() != 1 ? 1 : 0);
+              }
+            } else {
+              for (int i = 0; i < batchSize; i++) {
+                presentBuffer[i] = (byte) (!isNull[i] ? (present.next() != 1 ? 1 : 0) : 0);
+              }
+            }
+          }
+          long step1end = System.nanoTime();
+          System.out.println("step1 time " + (step1end - step1start));
+          long step2start = System.nanoTime();
+          int result = NativeTreeReader.nextVector(
+                  previous.isNull,
+                  isNull,
+                  presentBuffer,
+                  batchSize,
+                  !previous.noNulls,
+                  allNull
+          );
+
+          boolean hasNull = (result & 0x1) != 0;
+          allNull = (result & 0x2) != 0;
+          previous.noNulls = !hasNull;
+          long step2end = System.nanoTime();
+          System.out.println("step2 time " + (step2end - step2start));
+        } else {
+          long step1start = System.nanoTime();
+          for (int i = 0; i < batchSize; i++) {
+            if (isNull == null || !isNull[i]) {
+              if (present != null && present.next() != 1) {
+                previous.noNulls = false;
+                previous.isNull[i] = true;
+              } else {
+                previous.isNull[i] = false;
+                allNull = false;
+              }
+            } else {
               previous.noNulls = false;
               previous.isNull[i] = true;
-            } else {
-              previous.isNull[i] = false;
-              allNull = false;
             }
-          } else {
-            previous.noNulls = false;
-            previous.isNull[i] = true;
           }
+          long step1end = System.nanoTime();
+          System.out.println("step1 time " + (step1end - step1start));
         }
         previous.isRepeating = !previous.noNulls && allNull;
+        long end = System.nanoTime();
+        System.out.println("batchSize " + batchSize + " use time " + (end - start));
       } else {
         // There is no present stream, this means that all the values are
         // present.
