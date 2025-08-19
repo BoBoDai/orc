@@ -54,6 +54,18 @@ public class Murmur3 {
 
   private static final int DEFAULT_SEED = 104729;
 
+  static {
+    try {
+      if (!"java".equalsIgnoreCase(System.getProperty("orc.util.murmur3"))) {
+        if (!NativeResourceLoader.isLoaded("murmur3")) {
+          NativeResourceLoader.load("murmur3");
+        }
+      }
+    } catch (UnsatisfiedLinkError | ExceptionInInitializerError e) {
+      // ignore
+    }
+  }
+
   /**
    * Murmur3 32-bit variant.
    *
@@ -73,6 +85,9 @@ public class Murmur3 {
    * @return - hashcode
    */
   public static int hash32(byte[] data, int length, int seed) {
+    if (NativeResourceLoader.isLoaded("murmur3")) {
+      return NativeMurmur3.hash32(data, length, seed);
+    }
     int hash = seed;
     final int nblocks = length >> 2;
 
@@ -132,7 +147,7 @@ public class Murmur3 {
   }
 
   public static long hash64(byte[] data, int offset, int length) {
-    return hash64(data, offset, length, DEFAULT_SEED);
+      return hash64(data, offset, length, DEFAULT_SEED);
   }
 
   /**
@@ -144,6 +159,9 @@ public class Murmur3 {
    * @return - hashcode
    */
   public static long hash64(byte[] data, int offset, int length, int seed) {
+    if (NativeMurmur3.isLoaded()) {
+      return NativeMurmur3.hash64(data, offset, length, seed);
+    }
     long hash = seed;
     final int nblocks = length >> 3;
 
@@ -218,6 +236,9 @@ public class Murmur3 {
    * @return - hashcode (2 longs)
    */
   public static long[] hash128(byte[] data, int offset, int length, int seed) {
+    if (NativeMurmur3.isLoaded()) {
+      return NativeMurmur3.hash128(data, offset, length, seed);
+    }
     long h1 = seed;
     long h2 = seed;
     final int nblocks = length >> 4;
