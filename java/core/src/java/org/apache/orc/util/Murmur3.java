@@ -60,6 +60,7 @@ public class Murmur3 {
         if (!NativeResourceLoader.isLoaded("murmur3")) {
           NativeResourceLoader.load("murmur3");
         }
+        NativeMurmur3.initNative();
       }
     } catch (UnsatisfiedLinkError | ExceptionInInitializerError e) {
       // ignore

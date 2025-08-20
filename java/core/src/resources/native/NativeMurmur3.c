@@ -2,6 +2,16 @@
 #include <stdint.h>
 #include "NativeMurmur3.h"
 
+// 全局缓存
+static jclass NativeMurmur3_class = NULL;
+
+// 初始化方法：预注册方法 ID 和类引用
+JNIEXPORT void JNICALL Java_org_apache_orc_util_NativeMurmur3_initNative
+  (JNIEnv *env, jclass clazz) {
+
+    NativeMurmur3_class = (*env)->NewGlobalRef(env, clazz);
+}
+
 #define C1_32 0xcc9e2d51
 #define C2_32 0x1b873593
 #define M_32  5
@@ -295,4 +305,15 @@ JNIEXPORT jlongArray JNICALL Java_org_apache_orc_util_NativeMurmur3_hash128(JNIE
     (*env)->SetLongArrayRegion(env, result, 0, 2, hash);
 
     return result;
+}
+
+// 卸载时释放全局引用
+JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
+    JNIEnv *env;
+    if ((*vm)->GetEnv(vm, (void**)&env, JNI_VERSION_1_6) != JNI_OK) return;
+
+    if (NativeMurmur3_class) {
+        (*env)->DeleteGlobalRef(env, NativeMurmur3_class);
+        NativeMurmur3_class = NULL;
+    }
 }

@@ -1,35 +1,5 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.apache.orc.util;
 
-/**
- * Murmur3 is successor to Murmur2 fast non-crytographic hash algorithms.
- * <p>
- * Murmur3 32 and 128 bit variants.
- * 32-bit Java port of https://code.google.com/p/smhasher/source/browse/trunk/MurmurHash3.cpp#94
- * 128-bit Java port of https://code.google.com/p/smhasher/source/browse/trunk/MurmurHash3.cpp#255
- * <p>
- * This is a public domain code with no copyrights.
- * From homepage of MurmurHash (https://code.google.com/p/smhasher/),
- * "All MurmurHash versions are public domain software, and the author disclaims all copyright
- * to their code."
- */
 public class NativeMurmur3 {
 
     private static final int DEFAULT_SEED = 104729;
@@ -40,6 +10,7 @@ public class NativeMurmur3 {
                 if (!NativeResourceLoader.isLoaded("murmur3")) {
                     NativeResourceLoader.load("murmur3");
                 }
+                initNative();
             }
         } catch (UnsatisfiedLinkError | ExceptionInInitializerError e) {
             // ignore
@@ -49,6 +20,8 @@ public class NativeMurmur3 {
     public static boolean isLoaded() {
         return NativeResourceLoader.isLoaded("murmur3");
     }
+
+    public static native void initNative();
 
     /**
      * Murmur3 32-bit variant.

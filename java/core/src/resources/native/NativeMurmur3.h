@@ -10,6 +10,14 @@ extern "C" {
 
 /*
  * Class:     org_apache_orc_util_NativeMurmur3
+ * Method:    initNative
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_org_apache_orc_util_NativeMurmur3_initNative
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     org_apache_orc_util_NativeMurmur3
  * Method:    hash32
  * Signature: ([BII)I
  */
