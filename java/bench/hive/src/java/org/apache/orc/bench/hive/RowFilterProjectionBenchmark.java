@@ -120,7 +120,7 @@ public class RowFilterProjectionBenchmark implements OrcBenchmark {
     // select an ID column to apply filter on
     String filter_column;
     if ("taxi".equals(dataset)) {
-      filter_column = "vendor_id";
+      filter_column = "VendorID";
     } else if ("sales".equals(dataset)) {
       filter_column = "sales_id";
     } else if ("github".equals(dataset)) {
