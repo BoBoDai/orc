@@ -166,7 +166,7 @@ public class RowFilterProjectionBenchmark implements OrcBenchmark {
     counters.addInvocation();
   }
 
-  @Benchmark
+  // @Benchmark
   public void orcNoFilter(IOCounters counters) throws Exception {
     Configuration conf = new Configuration();
     TrackingLocalFileSystem fs = new TrackingLocalFileSystem();
