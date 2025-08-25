@@ -2,10 +2,8 @@
 #include <stdint.h>
 #include "NativeMurmur3.h"
 
-// 全局缓存
 static jclass NativeMurmur3_class = NULL;
 
-// 初始化方法：预注册方法 ID 和类引用
 JNIEXPORT void JNICALL Java_org_apache_orc_util_NativeMurmur3_initNative
   (JNIEnv *env, jclass clazz) {
 
@@ -50,9 +48,9 @@ JNIEXPORT jint JNICALL Java_org_apache_orc_util_NativeMurmur3_hash32 (JNIEnv *en
         return 0;
     }
 
-    jbyte *bytes = (*env)->GetByteArrayElements(env, data, NULL);
+    jbyte *bytes = (*env)->GetPrimitiveArrayCritical(env, data, NULL);
     if (bytes == NULL) {
-        return 0; // 内存分配失败
+        return 0;
     }
 
     uint32_t hash = (uint32_t)seed;
@@ -96,7 +94,7 @@ JNIEXPORT jint JNICALL Java_org_apache_orc_util_NativeMurmur3_hash32 (JNIEnv *en
     hash *= 0xc2b2ae35U;
     hash ^= (hash >> 16);
 
-    (*env)->ReleaseByteArrayElements(env, data, bytes, JNI_ABORT);
+    (*env)->ReleasePrimitiveArrayCritical(env, data, bytes, JNI_ABORT);
 
     return (jint)hash;
 }
@@ -105,7 +103,7 @@ JNIEXPORT jlong JNICALL Java_org_apache_orc_util_NativeMurmur3_hash64 (JNIEnv *e
         if (data == NULL || length < 0) {
             return 0;
         }
-        jbyte *bytes = (*env)->GetByteArrayElements(env, data, NULL);
+        jbyte *bytes = (*env)->GetPrimitiveArrayCritical(env, data, NULL);
         if (bytes == NULL) {
             return 0L;
         }
@@ -113,7 +111,6 @@ JNIEXPORT jlong JNICALL Java_org_apache_orc_util_NativeMurmur3_hash64 (JNIEnv *e
         uint64_t hash = (uint64_t)seed;
         const int nblocks = length >> 3;
 
-        // 处理完整的 8 字节块
         for (int i = 0; i < nblocks; i++) {
             const int i8 = i << 3;
             const int pos = offset + i8;
@@ -142,22 +139,16 @@ JNIEXPORT jlong JNICALL Java_org_apache_orc_util_NativeMurmur3_hash64 (JNIEnv *e
         switch (tailLen) {
             case 7:
                 k1 ^= (uint64_t)(bytes[tailPos + 6] & 0xFF) << 48;
-                // fall through
             case 6:
                 k1 ^= (uint64_t)(bytes[tailPos + 5] & 0xFF) << 40;
-                // fall through
             case 5:
                 k1 ^= (uint64_t)(bytes[tailPos + 4] & 0xFF) << 32;
-                // fall through
             case 4:
                 k1 ^= (uint64_t)(bytes[tailPos + 3] & 0xFF) << 24;
-                // fall through
             case 3:
                 k1 ^= (uint64_t)(bytes[tailPos + 2] & 0xFF) << 16;
-                // fall through
             case 2:
                 k1 ^= (uint64_t)(bytes[tailPos + 1] & 0xFF) << 8;
-                // fall through
             case 1:
                 k1 ^= (uint64_t)(bytes[tailPos + 0] & 0xFF);
                 k1 *= C1;
@@ -172,13 +163,13 @@ JNIEXPORT jlong JNICALL Java_org_apache_orc_util_NativeMurmur3_hash64 (JNIEnv *e
         hash ^= (uint64_t)length;
         hash = fmix64(hash);
 
-        (*env)->ReleaseByteArrayElements(env, data, bytes, JNI_ABORT);
+        (*env)->ReleasePrimitiveArrayCritical(env, data, bytes, JNI_ABORT);
 
         return (jlong)hash;
 }
 
 JNIEXPORT jlongArray JNICALL Java_org_apache_orc_util_NativeMurmur3_hash128(JNIEnv *env, jclass cls, jbyteArray data, jint offset, jint length, jint seed) {
-    jbyte *bytes = (*env)->GetByteArrayElements(env, data, NULL);
+    jbyte *bytes = (*env)->GetPrimitiveArrayCritical(env, data, NULL);
     if (bytes == NULL) {
         return NULL; // 内存错误
     }
@@ -294,7 +285,7 @@ JNIEXPORT jlongArray JNICALL Java_org_apache_orc_util_NativeMurmur3_hash128(JNIE
     h1 += h2;
     h2 += h1;
 
-    (*env)->ReleaseByteArrayElements(env, data, bytes, JNI_ABORT);
+    (*env)->ReleasePrimitiveArrayCritical(env, data, bytes, JNI_ABORT);
 
     jlongArray result = (*env)->NewLongArray(env, 2);
     if (result == NULL) {
